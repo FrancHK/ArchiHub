@@ -38,49 +38,33 @@ export default function RegisterForm() {
       return
     }
 
-    const supabase = createClient()
-
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, role },
-        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-      },
+    // Create user server-side (no email confirmation needed)
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, full_name: fullName, role, title, experience_years: experienceYears }),
     })
 
-    if (signUpError) {
-      setError(signUpError.message)
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.error || 'Registration failed')
       setLoading(false)
       return
     }
 
-    if (authData.user) {
-      await supabase.from('archi_profiles').upsert({
-        id: authData.user.id,
-        email,
-        full_name: fullName,
-        role,
-      })
+    // Sign in immediately after account created
+    const supabase = createClient()
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
-      if (role === 'engineer') {
-        await supabase.from('archi_engineer_profiles').insert({
-          user_id: authData.user.id,
-          title,
-          experience_years: parseInt(experienceYears) || 0,
-          is_verified: false,
-        })
-      }
-
-      if (authData.session) {
-        router.push(role === 'engineer' ? '/engineer' : '/dashboard')
-        router.refresh()
-      } else {
-        setSuccess(true)
-      }
+    if (signInError) {
+      setError(signInError.message)
+      setLoading(false)
+      return
     }
 
-    setLoading(false)
+    router.push(role === 'engineer' ? '/engineer' : '/dashboard')
+    router.refresh()
   }
 
   if (success) {
