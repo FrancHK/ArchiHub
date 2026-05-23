@@ -59,7 +59,11 @@ export async function POST(request: NextRequest) {
   if (!engineerProfile) return NextResponse.json({ error: 'Engineer profile not found' }, { status: 403 })
 
   const body = await request.json()
-  const { title, description, price, bedrooms, bathrooms, floors, area_sqft, house_type, thumbnail_url, preview_images, file_url, tags } = body
+  const {
+    title, description, price, bedrooms, bathrooms, floors, area_sqft, house_type,
+    thumbnail_url, preview_images, file_url, tags,
+    photo_front, photo_back, photo_right, photo_left, photo_top, photo_floor_plan, zip_url,
+  } = body
 
   if (!title || !price) return NextResponse.json({ error: 'Title and price are required' }, { status: 400 })
 
@@ -74,6 +78,8 @@ export async function POST(request: NextRequest) {
       area_sqft: area_sqft ? parseFloat(area_sqft) : null,
       house_type, thumbnail_url, preview_images: preview_images || [],
       file_url, tags: tags || [],
+      photo_front, photo_back, photo_right, photo_left, photo_top, photo_floor_plan,
+      zip_url: zip_url || file_url,
       is_published: false,
     })
     .select()
